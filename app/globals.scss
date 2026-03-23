@@ -1,0 +1,68 @@
+/* app/globals.scss */
+@import "tailwindcss";
+
+@theme {
+  --color-bg-black: #000000;
+  --color-gold-500: #FFD700;
+  --color-gold-300: #FFF8DC;
+  
+  --animate-aurora: aurora 4s linear infinite;
+}
+
+:root {
+  --bg-black: #000000;
+  --glow-purple: rgba(102, 51, 153, 0.6);
+  --glow-teal: rgba(0, 128, 128, 0.6);
+}
+
+body {
+  background-color: var(--bg-black);
+  color: white;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+/* Typography Gradient */
+.gold-text-gradient {
+  background: linear-gradient(135deg, #FFD700 0%, #FFF8DC 50%, #FFD700 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Aura Button with Tailwind v4 & SCSS (Input 3) */
+.aura-glow-button {
+  position: relative;
+  background: rgba(17, 17, 17, 0.8);
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  color: #FFD700;
+  overflow: hidden;
+  z-index: 1;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at center, var(--glow-purple) 0%, transparent 40%),
+                radial-gradient(circle at bottom right, var(--glow-teal) 0%, transparent 50%);
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    filter: blur(20px);
+  }
+
+  &:hover::before, &:active::before {
+    opacity: 1;
+    animation: rotateAura 4s linear infinite;
+  }
+}
+
+@keyframes rotateAura {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
