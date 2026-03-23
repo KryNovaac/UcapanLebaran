@@ -70,7 +70,7 @@ export function textGlowPulse(
   if (!element) return;
 
   gsap.to(element, {
-    textShadow: colors,
+    keyframes: colors.map((color) => ({ textShadow: color })),
     duration,
     repeat: -1,
     ease: 'sine.inOut',
@@ -177,7 +177,7 @@ export function buttonClickPulse(element: HTMLElement | null, duration = 0.2) {
  */
 export function glowButtonPulse(
   element: HTMLElement | null,
-  colors: string[] = [
+  colors: string[] =[
     '0 0 10px rgba(255, 215, 0, 0.3), 0 0 20px rgba(102, 51, 153, 0.2)',
     '0 0 20px rgba(255, 215, 0, 0.5), 0 0 30px rgba(0, 128, 128, 0.3)',
     '0 0 10px rgba(255, 215, 0, 0.3), 0 0 20px rgba(102, 51, 153, 0.2)',
@@ -187,10 +187,11 @@ export function glowButtonPulse(
   if (!element) return;
 
   gsap.to(element, {
-    boxShadow: colors,
+    // UBAH BAGIAN INI: Gunakan keyframes
+    keyframes: colors.map((color) => ({ boxShadow: color })),
     duration,
     repeat: -1,
-    ease: 'ease-in-out',
+    ease: 'power1.inOut', // Catatan: 'ease-in-out' standar CSS biasanya ditulis 'power1.inOut' atau 'sine.inOut' di GSAP
   });
 }
 
@@ -269,8 +270,11 @@ export function killAnimations(element: HTMLElement | null) {
  * Kill semua animasi GSAP
  * Gunakan untuk cleanup page
  */
+
+
 export function killAllAnimations() {
-  gsap.killAll();
+  // Gunakan cara GSAP v3 untuk menghentikan & menghapus semua animasi
+  gsap.globalTimeline.clear();
 }
 
 /**
