@@ -1,11 +1,16 @@
 // app/layout.tsx
 import type { Metadata } from 'next';
-import { Toaster } from 'sonner'; // Menggunakan Sonner dari package.json
+import { Toaster } from 'sonner';
 import './globals.scss';
 
 export const metadata: Metadata = {
   title: 'Eid Mubarak Greeting',
   description: 'Selamat Hari Raya Eid Mubarak - Mohon Maaf Lahir & Batin',
+  // TAMBAHKAN BAGIAN ICONS INI
+  icons: {
+    icon: '/logo.png',        // Menampilkan logo di tab browser standar
+    apple: '/logo.png',       // Menampilkan logo jika website disimpan ke Home Screen iPhone
+  },
 };
 
 export default function RootLayout({
