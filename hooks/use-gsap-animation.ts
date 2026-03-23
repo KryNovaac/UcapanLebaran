@@ -35,9 +35,10 @@ export function useEntranceAnimation(
  * Hook untuk continuous glow pulse animation
  * Useful untuk text glow, button glow, dan efek cahaya lainnya
  */
+
 export function useGlowPulseAnimation(
-  ref: React.RefObject<HTMLElement>,
-  colors: string[] = [
+  ref: React.RefObject<HTMLElement | null>,
+  colors: string[] =[
     '0 0 20px rgba(255, 215, 0, 0.3)',
     '0 0 40px rgba(255, 215, 0, 0.6)',
     '0 0 20px rgba(255, 215, 0, 0.3)',
@@ -47,8 +48,9 @@ export function useGlowPulseAnimation(
   useEffect(() => {
     if (!ref.current) return;
 
+    // Perbaikan: Gunakan keyframes karena kita menggunakan array (multiple steps)
     const tween = gsap.to(ref.current, {
-      textShadow: colors,
+      keyframes: colors.map((color) => ({ textShadow: color })),
       duration,
       repeat: -1,
       ease: 'sine.inOut',
@@ -57,9 +59,8 @@ export function useGlowPulseAnimation(
     return () => {
       tween.kill();
     };
-  }, [ref, colors, duration]);
+  },[ref, colors, duration]);
 }
-
 /**
  * Hook untuk rotating animation
  * Useful untuk icons, badges, loading spinners
