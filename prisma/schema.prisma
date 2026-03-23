@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// Menyimpan data pengguna
+model User {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  username     String   @unique
+  hasCheckedIn Boolean  @default(false)
+  sequence     Int?
+  isVip        Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Menyimpan pemetaan IP address ke Username untuk otomatis login (Session)
+model IpMapping {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  ip       String   @unique
+  username String
+}
+
+// Menyimpan Counter Total Pengunjung (Global State)
+model GlobalState {
+  id    String @id @default(auto()) @map("_id") @db.ObjectId
+  key   String @unique
+  value Int    @default(0)
+}

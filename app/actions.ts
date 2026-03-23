@@ -1,8 +1,7 @@
-// app/actions.ts
 "use server";
 
-import { kv } from '@vercel/kv';
 import { headers } from 'next/headers';
+import { prisma } from '@/lib/prisma'; // Sesuaikan path ini jika lib ada di tempat lain
 
 export type UserSession = {
   username: string;
@@ -21,11 +20,26 @@ const getIP = async () => {
 // 1. Cek Sesi (Dipanggil otomatis saat halaman dimuat)
 export async function checkSession(): Promise<UserSession | null> {
   const ip = await getIP();
-  const username = await kv.get<string>(`ip:${ip}`);
   
-  if (username) {
-    const userData = await kv.get<UserSession>(`user:${username.toLowerCase()}`);
-    return userData || null;
+  // Cari apakah IP ini sudah tersimpan
+  const mapping = await prisma.ipMapping.findUnique({
+    where: { ip }
+  });
+  
+  if (mapping) {
+    // Jika ada, ambil data user berdasarkan username dari IP tersebut
+    const user = await prisma.user.findUnique({
+      where: { username: mapping.username }
+    });
+    
+    if (user) {
+      return {
+        username: user.username,
+        hasCheckedIn: user.hasCheckedIn,
+        sequence: user.sequence,
+        isVip: user.isVip,
+      };
+    }
   }
   return null;
 }
@@ -37,52 +51,72 @@ export async function registerUser(name: string): Promise<UserSession> {
   const keyName = cleanName.toLowerCase();
   const isVip = keyName === 'katherine ariase';
 
-  // Cek apakah user ini sudah pernah ada di database
-  const existingUser = await kv.get<UserSession>(`user:${keyName}`);
-  
-  if (existingUser) {
-    // Ikat IP baru ke username yang sudah ada
-    await kv.set(`ip:${ip}`, cleanName);
-    return existingUser;
-  }
+  // Cari User, jika tidak ada, buat baru (Upsert)
+  const user = await prisma.user.upsert({
+    where: { username: keyName },
+    update: {}, // Jika sudah ada, tidak ada yang diubah
+    create: {
+      username: keyName,
+      isVip: isVip,
+      hasCheckedIn: false,
+    }
+  });
 
-  // Buat data baru jika belum ada
-  const newUser: UserSession = {
-    username: cleanName,
-    hasCheckedIn: false,
-    sequence: null,
-    isVip: isVip,
+  // Simpan / Perbarui pemetaan IP ke Username ini (Agar otomatis login selanjutnya)
+  await prisma.ipMapping.upsert({
+    where: { ip },
+    update: { username: keyName },
+    create: { ip, username: keyName }
+  });
+
+  return {
+    username: user.username,
+    hasCheckedIn: user.hasCheckedIn,
+    sequence: user.sequence,
+    isVip: user.isVip,
   };
-
-  await kv.set(`user:${keyName}`, newUser);
-  await kv.set(`ip:${ip}`, cleanName);
-
-  return newUser;
 }
 
 // 3. Eksekusi Check-In (Tombol ditekan)
 export async function performCheckIn(username: string): Promise<{ sequence: number, total: number }> {
   const keyName = username.toLowerCase();
-  const user = await kv.get<UserSession>(`user:${keyName}`);
-
+  
+  // Cari user
+  const user = await prisma.user.findUnique({ where: { username: keyName } });
   if (!user) throw new Error("User not found");
 
-  let currentTotal = await kv.get<number>('global:visitor_count') || 0;
+  let currentTotal = 0;
 
-  // Jika belum check-in, tambah counter
+  // Jika belum check-in, lakukan operasi atomic increment untuk counter
   if (!user.hasCheckedIn) {
-    // Atomic increment untuk mencegah race condition (aman dari exploit)
-    currentTotal = await kv.incr('global:visitor_count');
-    
-    user.hasCheckedIn = true;
-    user.sequence = currentTotal;
-    await kv.set(`user:${keyName}`, user);
+    // Atomic increment: Aman dari bentrok (race condition) meskipun ditekan bersamaan
+    const globalState = await prisma.globalState.upsert({
+      where: { key: 'visitor_count' },
+      update: { value: { increment: 1 } },
+      create: { key: 'visitor_count', value: 1 }
+    });
+
+    currentTotal = globalState.value;
+
+    // Update data pengguna bahwa dia sudah check-in
+    await prisma.user.update({
+      where: { username: keyName },
+      data: {
+        hasCheckedIn: true,
+        sequence: currentTotal
+      }
+    });
+
+    return { sequence: currentTotal, total: currentTotal };
   }
 
-  return { sequence: user.sequence || currentTotal, total: currentTotal };
+  // Jika sudah checkin sebelumnya, ambil total saat ini saja
+  const state = await prisma.globalState.findUnique({ where: { key: 'visitor_count' } });
+  return { sequence: user.sequence || 0, total: state?.value || 0 };
 }
 
 // 4. Ambil Total Pengunjung saat ini
 export async function getTotalVisitors(): Promise<number> {
-  return (await kv.get<number>('global:visitor_count')) || 0;
+  const state = await prisma.globalState.findUnique({ where: { key: 'visitor_count' } });
+  return state?.value || 0;
 }

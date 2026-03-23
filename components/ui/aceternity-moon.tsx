@@ -19,7 +19,7 @@ export const AceternityMoon = ({ className }: { className?: string }) => {
       />
       
       {/* The Moon Crescent */}
-      <div className="relative w-10 h-10 rounded-full bg-transparent border-l-[8px] border-b-[8px] border-[#FFD700] transform -rotate-45 shadow-[0_0_15px_rgba(255,215,0,0.5)]">
+      <div className="relative w-10 h-10 rounded-full bg-transparent border-l-[3px] border-b-[3px] border-[#ffd900] transform -rotate-45 shadow-[0_0_15px_rgba(255,215,0,0.5)]">
         {/* Inner detail to make it look 3D-ish */}
         <div className="absolute inset-0 rounded-full shadow-[inset_4px_-4px_8px_rgba(255,255,255,0.3)]"></div>
       </div>
